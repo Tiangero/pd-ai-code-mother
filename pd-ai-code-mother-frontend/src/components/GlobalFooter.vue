@@ -3,12 +3,12 @@
     <div class="footer-content">
       <p class="copyright">
         <a
-          href="https://github.com/Tiangero"
+          href="https://www.github.com/Tiangero"
           target="_blank"
           rel="noopener noreferrer"
           class="author-link"
         >
-          皮蛋AI零代码生成应用平台 by 程序员皮蛋
+          Github原创项目 by 程序员皮蛋
         </a>
       </p>
     </div>
@@ -21,13 +21,12 @@
 
 <style scoped>
 .footer {
-  background: #efefef;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
   text-align: center;
   padding: 20px;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  //margin-top: 40px;
+  border-top: 1px solid rgba(102, 126, 234, 0.1);
 }
 
 .copyright {

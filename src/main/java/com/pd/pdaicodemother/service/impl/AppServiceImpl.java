@@ -17,15 +17,19 @@ import com.pd.pdaicodemother.model.entity.App;
 import com.pd.pdaicodemother.mapper.AppMapper;
 import com.pd.pdaicodemother.model.entity.User;
 import com.pd.pdaicodemother.model.enums.CodeGenTypeEnum;
+import com.pd.pdaicodemother.model.enums.MessageTypeEnum;
 import com.pd.pdaicodemother.model.vo.AppVO;
 import com.pd.pdaicodemother.model.vo.UserVO;
 import com.pd.pdaicodemother.service.AppService;
+import com.pd.pdaicodemother.service.ChatHistoryService;
 import com.pd.pdaicodemother.service.UserService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 
 import java.io.File;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,6 +51,9 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     @Resource
     private AiCodeGeneratorFacade aiCodeGeneratorFacade;
 
+    @Resource
+    private ChatHistoryService chatHistoryService;
+
     /**
      * 聊天生成代码
      *
@@ -67,8 +74,36 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         // 3. 获取生成代码类型
         CodeGenTypeEnum codeTypeEnum = CodeGenTypeEnum.getEnumByValue(app.getCodeGenType());
         ThrowUtils.throwIf(codeTypeEnum == null, ErrorCode.PARAMS_ERROR, "不支持的生成代码类型");
+        // 4. 将用户消息插入到对话
+        chatHistoryService.addChatMessage(appId, message, MessageTypeEnum.USER.getValue(), loginUser.getId());
         // 4. 调用AI生成
-        return aiCodeGeneratorFacade.generateAndSaveCodeStream(message, codeTypeEnum, appId);
+        Flux<String> aiResponseFlux = aiCodeGeneratorFacade.generateAndSaveCodeStream(message, codeTypeEnum, appId);
+        StringBuilder aiResponseContent = new StringBuilder();
+        return aiResponseFlux
+                .map(chunk -> {
+                    aiResponseContent.append(chunk);
+                    return chunk;
+                })
+                .doOnComplete(() -> {
+                    String aiResponse = aiResponseContent.toString();
+                    if (!StrUtil.isBlank(aiResponse)) {
+                        chatHistoryService.addChatMessage(appId, aiResponse, MessageTypeEnum.AI.getValue(), loginUser.getId());
+                    }
+                })
+                .doOnError(error -> {
+                    String aiResponse = "AI 回复失败：" + error.getMessage();
+                    chatHistoryService.addChatMessage(appId, aiResponse, MessageTypeEnum.AI.getValue(), loginUser.getId());
+                });
+    }
+
+    @Override
+    @Transactional
+    public boolean removeById(Serializable id) {
+        long appId = Long.parseLong(id.toString());
+        boolean result = super.removeById(appId);
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "删除应用失败");
+        chatHistoryService.removeByMap(Map.of("appId", appId));
+        return true;
     }
 
     @Override

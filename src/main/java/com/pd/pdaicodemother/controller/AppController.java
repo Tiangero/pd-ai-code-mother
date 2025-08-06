@@ -15,9 +15,12 @@ import com.pd.pdaicodemother.exception.BusinessException;
 import com.pd.pdaicodemother.exception.ErrorCode;
 import com.pd.pdaicodemother.exception.ThrowUtils;
 import com.pd.pdaicodemother.model.dto.app.*;
+import com.pd.pdaicodemother.model.entity.ChatHistory;
 import com.pd.pdaicodemother.model.entity.User;
 import com.pd.pdaicodemother.model.enums.CodeGenTypeEnum;
+import com.pd.pdaicodemother.model.enums.MessageTypeEnum;
 import com.pd.pdaicodemother.model.vo.AppVO;
+import com.pd.pdaicodemother.service.ChatHistoryService;
 import com.pd.pdaicodemother.service.UserService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,6 +34,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -48,6 +52,7 @@ public class AppController {
 
     @Resource
     private AppService appService;
+
 
     /**
      * 应用部署
@@ -88,7 +93,6 @@ public class AppController {
         User loginUser = userService.getLoginUser(request);
         // 3. 生成代码（流式）
         Flux<String> contentFlux = appService.chatToGenCode(appId, message, loginUser);
-
         return contentFlux
                 .map(chunk -> {
                     Map<String, String> wrapper = Map.of("d", chunk);
