@@ -9,6 +9,8 @@ import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.pd.pdaicodemother.constant.AppConstant;
 import com.pd.pdaicodemother.core.AiCodeGeneratorFacade;
+import com.pd.pdaicodemother.core.builder.VueProjectBuilder;
+import com.pd.pdaicodemother.core.handler.StreamHandlerExecutor;
 import com.pd.pdaicodemother.exception.BusinessException;
 import com.pd.pdaicodemother.exception.ErrorCode;
 import com.pd.pdaicodemother.exception.ThrowUtils;
@@ -24,6 +26,8 @@ import com.pd.pdaicodemother.service.AppService;
 import com.pd.pdaicodemother.service.ChatHistoryService;
 import com.pd.pdaicodemother.service.UserService;
 import jakarta.annotation.Resource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
@@ -45,6 +49,7 @@ import java.util.stream.Collectors;
 @Service
 public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppService {
 
+    private static final Logger log = LoggerFactory.getLogger(AppServiceImpl.class);
     @Resource
     private UserService userService;
 
@@ -53,6 +58,12 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
 
     @Resource
     private ChatHistoryService chatHistoryService;
+
+    @Resource
+    private VueProjectBuilder vueProjectBuilder;
+
+    @Resource
+    private StreamHandlerExecutor streamHandlerExecutor;
 
     /**
      * 聊天生成代码
@@ -76,24 +87,10 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         ThrowUtils.throwIf(codeTypeEnum == null, ErrorCode.PARAMS_ERROR, "不支持的生成代码类型");
         // 4. 将用户消息插入到对话
         chatHistoryService.addChatMessage(appId, message, MessageTypeEnum.USER.getValue(), loginUser.getId());
-        // 4. 调用AI生成
+        // 5. 调用AI生成
         Flux<String> aiResponseFlux = aiCodeGeneratorFacade.generateAndSaveCodeStream(message, codeTypeEnum, appId);
-        StringBuilder aiResponseContent = new StringBuilder();
-        return aiResponseFlux
-                .map(chunk -> {
-                    aiResponseContent.append(chunk);
-                    return chunk;
-                })
-                .doOnComplete(() -> {
-                    String aiResponse = aiResponseContent.toString();
-                    if (!StrUtil.isBlank(aiResponse)) {
-                        chatHistoryService.addChatMessage(appId, aiResponse, MessageTypeEnum.AI.getValue(), loginUser.getId());
-                    }
-                })
-                .doOnError(error -> {
-                    String aiResponse = "AI 回复失败：" + error.getMessage();
-                    chatHistoryService.addChatMessage(appId, aiResponse, MessageTypeEnum.AI.getValue(), loginUser.getId());
-                });
+        // 6. 处理不同类型的消息响应
+        return streamHandlerExecutor.doExecute(aiResponseFlux, chatHistoryService, appId, loginUser, codeTypeEnum);
     }
 
     @Override
@@ -133,7 +130,16 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         if (!sourceDir.exists() || !sourceDir.isDirectory()) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "应用代码不存在，请先生成代码");
         }
-        // 7. 复制文件到部署目录
+        // 7. vue项目特殊处理
+        if (CodeGenTypeEnum.VUE_PROJECT.getValue().equals(codeGenType)) {
+            // 构建项目
+            boolean buildSuccess = vueProjectBuilder.buildProject(sourceDirPath);
+            ThrowUtils.throwIf(!buildSuccess, ErrorCode.SYSTEM_ERROR, "构建 Vue 项目失败");
+            // 将dist目录作为sourceDir
+            sourceDir = new File(sourceDirPath, "dist");
+            log.info("Vue 项目构建成功：{}", sourceDir.getAbsolutePath());
+        }
+        // 8. 复制文件到部署目录
         String deployDirPath = AppConstant.CODE_DEPLOY_ROOT_DIR + File.separator + deployKey;
         try {
             FileUtil.copyContent(sourceDir, new File(deployDirPath), true);
