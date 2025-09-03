@@ -1,9 +1,8 @@
 package com.pd.pdaicodemother.core.saver;
 
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
-import com.pd.pdaicodemother.constant.AppConstant;
+import com.pd.pdaicodemother.ai.constant.AppConstant;
 import com.pd.pdaicodemother.exception.BusinessException;
 import com.pd.pdaicodemother.exception.ErrorCode;
 import com.pd.pdaicodemother.model.enums.CodeGenTypeEnum;

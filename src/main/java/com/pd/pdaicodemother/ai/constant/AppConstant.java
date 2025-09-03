@@ -1,4 +1,4 @@
-package com.pd.pdaicodemother.constant;
+package com.pd.pdaicodemother.ai.constant;
 
 public interface AppConstant {
 

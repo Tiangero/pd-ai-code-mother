@@ -2,6 +2,7 @@ package com.pd.pdaicodemother.service;
 
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.core.service.IService;
+import com.pd.pdaicodemother.model.dto.app.AppAddRequest;
 import com.pd.pdaicodemother.model.dto.app.AppQueryRequest;
 import com.pd.pdaicodemother.model.entity.App;
 import com.pd.pdaicodemother.model.entity.User;
@@ -36,9 +37,13 @@ public interface AppService extends IService<App> {
      */
     String deployApp(Long appId, User loginUser);
 
+    void generateAppScreenshotAsync(Long appId, String appUrl);
+
     AppVO getAppVO(App app);
 
     QueryWrapper getQueryWrapper(AppQueryRequest appQueryRequest);
 
     List<AppVO> getAppVOList(List<App> appList);
+
+    Long createApp(AppAddRequest appAddRequest, User loginUser);
 }

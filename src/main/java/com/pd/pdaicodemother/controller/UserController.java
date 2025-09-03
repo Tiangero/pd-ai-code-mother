@@ -6,7 +6,7 @@ import com.pd.pdaicodemother.annotation.AuthCheck;
 import com.pd.pdaicodemother.common.BaseResponse;
 import com.pd.pdaicodemother.common.DeleteRequest;
 import com.pd.pdaicodemother.common.ResultUtils;
-import com.pd.pdaicodemother.constant.UserConstant;
+import com.pd.pdaicodemother.ai.constant.UserConstant;
 import com.pd.pdaicodemother.exception.BusinessException;
 import com.pd.pdaicodemother.exception.ErrorCode;
 import com.pd.pdaicodemother.exception.ThrowUtils;

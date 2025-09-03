@@ -5,7 +5,7 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.pd.pdaicodemother.ai.model.message.*;
-import com.pd.pdaicodemother.constant.AppConstant;
+import com.pd.pdaicodemother.ai.constant.AppConstant;
 import com.pd.pdaicodemother.core.builder.VueProjectBuilder;
 import com.pd.pdaicodemother.model.entity.User;
 import com.pd.pdaicodemother.model.enums.MessageTypeEnum;

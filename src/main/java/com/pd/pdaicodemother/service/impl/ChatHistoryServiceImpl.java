@@ -5,7 +5,7 @@ import cn.hutool.core.util.StrUtil;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
-import com.pd.pdaicodemother.constant.UserConstant;
+import com.pd.pdaicodemother.ai.constant.UserConstant;
 import com.pd.pdaicodemother.exception.ErrorCode;
 import com.pd.pdaicodemother.exception.ThrowUtils;
 import com.pd.pdaicodemother.model.dto.chathistory.ChatHistoryQueryRequest;

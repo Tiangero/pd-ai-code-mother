@@ -5,7 +5,7 @@ import com.mybatisflex.core.query.QueryWrapper;
 import com.pd.pdaicodemother.annotation.AuthCheck;
 import com.pd.pdaicodemother.common.BaseResponse;
 import com.pd.pdaicodemother.common.ResultUtils;
-import com.pd.pdaicodemother.constant.UserConstant;
+import com.pd.pdaicodemother.ai.constant.UserConstant;
 import com.pd.pdaicodemother.exception.ErrorCode;
 import com.pd.pdaicodemother.exception.ThrowUtils;
 import com.pd.pdaicodemother.model.dto.chathistory.ChatHistoryQueryRequest;
@@ -14,12 +14,10 @@ import com.pd.pdaicodemother.service.UserService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import com.pd.pdaicodemother.model.entity.ChatHistory;
 import com.pd.pdaicodemother.service.ChatHistoryService;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 /**
  * 对话历史 控制层。

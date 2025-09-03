@@ -1,6 +1,6 @@
 package com.pd.pdaicodemother.ai.tools;
 
-import com.pd.pdaicodemother.constant.AppConstant;
+import com.pd.pdaicodemother.ai.constant.AppConstant;
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import dev.langchain4j.agent.tool.ToolMemoryId;

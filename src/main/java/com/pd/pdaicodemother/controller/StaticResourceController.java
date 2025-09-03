@@ -1,6 +1,6 @@
 package com.pd.pdaicodemother.controller;
 
-import com.pd.pdaicodemother.constant.AppConstant;
+import com.pd.pdaicodemother.ai.constant.AppConstant;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;

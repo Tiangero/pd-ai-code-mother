@@ -7,7 +7,7 @@ spring:
     url: jdbc:mysql://localhost:3306/pd_ai_code_mother
     username: root
     password: 123456
-  #redis
+  # redis
   data:
     redis:
       host: localhost
@@ -19,6 +19,10 @@ spring:
     timeout: 2592000
   profiles:
     active: local
+  # 文件上传
+  servlet:
+    max-file-size: 10MB
+    max-request-size: 10MB
 server:
   port: 8123
   servlet:
@@ -41,3 +45,12 @@ knife4j:
   enable: true
   setting:
     language: zh_cn
+
+# minio
+minio:
+  endpoint: http://127.0.0.1:9000
+  accessKey: minio
+  secretKey: minio123456
+
+
+

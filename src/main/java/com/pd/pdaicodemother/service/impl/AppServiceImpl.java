@@ -7,13 +7,15 @@ import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
-import com.pd.pdaicodemother.constant.AppConstant;
+import com.pd.pdaicodemother.ai.AiCodeGenTypeRoutingService;
+import com.pd.pdaicodemother.ai.constant.AppConstant;
 import com.pd.pdaicodemother.core.AiCodeGeneratorFacade;
 import com.pd.pdaicodemother.core.builder.VueProjectBuilder;
 import com.pd.pdaicodemother.core.handler.StreamHandlerExecutor;
 import com.pd.pdaicodemother.exception.BusinessException;
 import com.pd.pdaicodemother.exception.ErrorCode;
 import com.pd.pdaicodemother.exception.ThrowUtils;
+import com.pd.pdaicodemother.model.dto.app.AppAddRequest;
 import com.pd.pdaicodemother.model.dto.app.AppQueryRequest;
 import com.pd.pdaicodemother.model.entity.App;
 import com.pd.pdaicodemother.mapper.AppMapper;
@@ -24,6 +26,7 @@ import com.pd.pdaicodemother.model.vo.AppVO;
 import com.pd.pdaicodemother.model.vo.UserVO;
 import com.pd.pdaicodemother.service.AppService;
 import com.pd.pdaicodemother.service.ChatHistoryService;
+import com.pd.pdaicodemother.service.ScreenshotService;
 import com.pd.pdaicodemother.service.UserService;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
@@ -64,6 +67,12 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
 
     @Resource
     private StreamHandlerExecutor streamHandlerExecutor;
+
+    @Resource
+    private ScreenshotService screenshotService;
+
+    @Resource
+    private AiCodeGenTypeRoutingService aiCodeGenTypeRoutingService;
 
     /**
      * 聊天生成代码
@@ -154,9 +163,44 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         boolean updateResult = this.updateById(updateApp);
         ThrowUtils.throwIf(!updateResult, ErrorCode.OPERATION_ERROR, "更新应用部署信息失败");
         // 9. 返回可访问的 URL
-        return String.format("%s/%s/", AppConstant.CODE_DEPLOY_HOST, deployKey);
+        String deployAppUrl = String.format("%s/%s/", AppConstant.CODE_DEPLOY_HOST, deployKey);
+        // 10. 异步生成页面截图
+        generateAppScreenshotAsync(appId, deployAppUrl);
+        return deployAppUrl;
     }
 
+    @Override
+    public Long createApp(AppAddRequest appAddRequest, User loginUser) {
+        // 参数校验
+        String initPrompt = appAddRequest.getInitPrompt();
+        ThrowUtils.throwIf(StrUtil.isBlank(initPrompt), ErrorCode.PARAMS_ERROR, "初始化 prompt 不能为空");
+        // 构造入库对象
+        App app = new App();
+        BeanUtil.copyProperties(appAddRequest, app);
+        app.setUserId(loginUser.getId());
+        // 应用名称暂时为 initPrompt 前 12 位
+        app.setAppName(initPrompt.substring(0, Math.min(initPrompt.length(), 12)));
+        // 使用 AI 智能选择代码生成类型
+        CodeGenTypeEnum selectedCodeGenType = aiCodeGenTypeRoutingService.routeCodeGenType(initPrompt);
+        app.setCodeGenType(selectedCodeGenType.getValue());
+        // 插入数据库
+        boolean result = this.save(app);
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        log.info("应用创建成功，ID: {}, 类型: {}", app.getId(), selectedCodeGenType.getValue());
+        return app.getId();
+    }
+
+    @Override
+    public void generateAppScreenshotAsync(Long appId, String appUrl) {
+        Thread.startVirtualThread(() -> {
+            String screenshotUrl = screenshotService.generateAndUploadScreenshot(appUrl);
+            App app = new App();
+            app.setId(appId);
+            app.setCover(screenshotUrl);
+            boolean result = this.updateById(app);
+            ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "更新应用截图失败");
+        });
+    }
 
     @Override
     public AppVO getAppVO(App app) {
